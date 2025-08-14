@@ -96,7 +96,7 @@ export async function normalizeStackSpecification(
       env: {
         ...mapToObject(variables),
       },
-      silent: true,
+      silent: false,
     },
   );
 
@@ -114,7 +114,7 @@ export async function normalizeStackSpecification(
     spec = load(content, {
       filename: "docker-compose.yaml",
       json: true,
-      onWarning: (error) => core.warning(error),
+      onWarning: (error: any) => core.warning(error),
     }) as ComposeSpec;
   } catch (cause) {
     throw new Error(
@@ -155,7 +155,7 @@ export async function listServices(
   filters: ServiceFilters,
   inspect?: boolean,
 ): Promise<ServiceMetadata[] | ServiceWithMetadata[]> {
-  core.debug("Listing services");
+  core.info("Listing services");
 
   const filterFlags = buildFilters(
     {
@@ -285,7 +285,7 @@ export async function listConfigs(filters: {
   name?: ValueFilter;
   labels?: KeyValueFilter;
 }) {
-  core.debug("Listing configs");
+  core.info("Listing configs");
 
   const filterFlags = buildFilters({
     id: filters.id,
@@ -392,7 +392,7 @@ async function executeDockerCommand(
     );
 
     core.info("Docker Command executed successfully");
-    core.debug(output);
+    core.info(output);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     core.error(`Command failed: ${message}`);

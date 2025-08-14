@@ -32,10 +32,10 @@ export async function processVariable(
     "envVarPrefix" | "strictVariables" | "stack" | "variables" | "version"
   >,
 ): Promise<Variable> {
-  core.debug(`Processing variable ${name}`);
+  core.info(`Processing variable ${name}`);
 
   if (variable?.labels?.[ignoreLabel] === "true") {
-    core.debug(`Variable "${name}" is marked as ignored. Skipping.`);
+    core.info(`Variable "${name}" is marked as ignored. Skipping.`);
 
     return variable;
   }
@@ -75,7 +75,7 @@ export async function processVariable(
   if (!content) {
     core.warning(
       `Variable "${name}" is defined with an empty value. This is ` +
-        `not recommended, as it may lead to unexpected behavior.`,
+      `not recommended, as it may lead to unexpected behavior.`,
     );
   }
 
@@ -118,14 +118,14 @@ async function readFromFile(name: string, variable: FileVariable) {
   if (!(await exists(filePath))) {
     throw new Error(
       `Variable "${name}" specifies the file "${filePath}" as its ` +
-        `source, but this file does not exist or is not readable. Ensure ` +
-        `it exists, or remove the "file" property from the variable ` +
-        `definition to let the action read the value from the build ` +
-        `environment automatically.`,
+      `source, but this file does not exist or is not readable. Ensure ` +
+      `it exists, or remove the "file" property from the variable ` +
+      `definition to let the action read the value from the build ` +
+      `environment automatically.`,
     );
   }
 
-  core.debug(`Loading variable ${name} from file: ${filePath}`);
+  core.info(`Loading variable ${name} from file: ${filePath}`);
 
   return await readFile(filePath, "utf8");
 }
@@ -138,10 +138,10 @@ function readFromEnvironment(
   if (!variables.has(variable)) {
     throw new Error(
       `Variable "${name}" specifies the environment variable ` +
-        `"${variable}" as its source, but there is no such ` +
-        "variable defined in the environment. Ensure it exists, or remove " +
-        `the "environment" property from the variable definition to let ` +
-        "the action infer the value from the variable name automatically.",
+      `"${variable}" as its source, but there is no such ` +
+      "variable defined in the environment. Ensure it exists, or remove " +
+      `the "environment" property from the variable definition to let ` +
+      "the action infer the value from the variable name automatically.",
     );
   }
 
@@ -178,7 +178,7 @@ async function inferVariable(
   // If the variable doesn't specify a source, we need to check if it exists;
   // first as a file, then as an environment variable in several variants.
   if (await exists(filePath)) {
-    core.debug(`Loading variable "${name}" from file: "${filePath}"`);
+    core.info(`Loading variable "${name}" from file: "${filePath}"`);
 
     return [
       await readFile(filePath, "utf8"),
@@ -201,7 +201,7 @@ async function inferVariable(
     `${stack}_${safeName}`.toUpperCase(),
   ]) {
     if (variables.has(variant)) {
-      core.debug(
+      core.info(
         `Loading variable "${name}" from environment variable "${variant}"`,
       );
 
@@ -214,9 +214,9 @@ async function inferVariable(
 
   throw new Error(
     `Variable "${name}" is not defined in the environment. To ` +
-      `use it as a secret or config, please set the environment variable ` +
-      `"${variantUpper}" or "${envVarPrefix}_${variantUpper}", or create a ` +
-      `file named "${name}.secret" in the project root directory.`,
+    `use it as a secret or config, please set the environment variable ` +
+    `"${variantUpper}" or "${envVarPrefix}_${variantUpper}", or create a ` +
+    `file named "${name}.secret" in the project root directory.`,
   );
 }
 
@@ -250,11 +250,11 @@ async function encodeVariable(
 
     throw new Error(
       `Variable "${name}" specifies an unknown encoding format: ` +
-        `"${format}". Must be one of "${supported}".`,
+      `"${format}". Must be one of "${supported}".`,
     );
   }
 
-  core.debug(`Encoding variable "${name}" to ${format}`);
+  core.info(`Encoding variable "${name}" to ${format}`);
 
   return encoders[format](content);
 }
@@ -273,11 +273,11 @@ async function decodeVariable(
 
     throw new Error(
       `Variable "${name}" specifies an unknown decoding format: ` +
-        `"${format}". Must be one of "${supported}".`,
+      `"${format}". Must be one of "${supported}".`,
     );
   }
 
-  core.debug(`Decoding variable "${name}" from ${format}`);
+  core.info(`Decoding variable "${name}" from ${format}`);
 
   return decoders[format](content);
 }
@@ -334,7 +334,7 @@ export async function pruneSecrets(
   { secrets }: ComposeSpec,
   { stack }: Settings,
 ) {
-  core.debug(`Pruning secrets for stack "${stack}"`);
+  core.info(`Pruning secrets for stack "${stack}"`);
 
   const variableIdentifier = ({
     stack,
@@ -347,9 +347,9 @@ export async function pruneSecrets(
   }) => stack + name + hash;
   const specSecrets = secrets
     ? Object.values(secrets)
-        .map(({ labels }) => marshalLabels(labels))
-        .filter((labels) => labels !== undefined)
-        .map((labels) => variableIdentifier(labels))
+      .map(({ labels }) => marshalLabels(labels))
+      .filter((labels) => labels !== undefined)
+      .map((labels) => variableIdentifier(labels))
     : [];
 
   const items = await listSecrets({
@@ -364,7 +364,7 @@ export async function pruneSecrets(
 
   core.info(
     `Checking ${items.length} secret${items.length !== 1 ? "s" : ""} ` +
-      `for stack "${stack}"`,
+    `for stack "${stack}"`,
   );
 
   for (let i = 0; i < items.length; i++) {
@@ -373,7 +373,7 @@ export async function pruneSecrets(
     const name = Name ?? ID;
     const labels = marshalLabels(Labels);
 
-    core.debug(`Checking secret ${i + 1}/${items.length}: ${name}`);
+    core.info(`Checking secret ${i + 1}/${items.length}: ${name}`);
 
     if (!labels) {
       core.notice(`Found invalid secret "${name}": Missing labels. Pruning.`);
@@ -408,7 +408,7 @@ export async function pruneConfigs(
   { configs }: ComposeSpec,
   { stack }: Settings,
 ) {
-  core.debug(`Pruning configs for stack "${stack}"`);
+  core.info(`Pruning configs for stack "${stack}"`);
 
   const variableIdentifier = ({
     stack,
@@ -421,9 +421,9 @@ export async function pruneConfigs(
   }) => stack + name + hash;
   const specConfigs = configs
     ? Object.values(configs)
-        .map(({ labels }) => marshalLabels(labels))
-        .filter((labels) => labels !== undefined)
-        .map((labels) => variableIdentifier(labels))
+      .map(({ labels }) => marshalLabels(labels))
+      .filter((labels) => labels !== undefined)
+      .map((labels) => variableIdentifier(labels))
     : [];
 
   const items = await listConfigs({
@@ -438,7 +438,7 @@ export async function pruneConfigs(
 
   core.info(
     `Checking ${items.length} config${items.length !== 1 ? "s" : ""} ` +
-      `for stack "${stack}"`,
+    `for stack "${stack}"`,
   );
 
   for (let i = 0; i < items.length; i++) {
@@ -447,7 +447,7 @@ export async function pruneConfigs(
     const name = Name ?? ID;
     const labels = marshalLabels(Labels);
 
-    core.debug(`Checking config ${i + 1}/${items.length}: ${name}`);
+    core.info(`Checking config ${i + 1}/${items.length}: ${name}`);
 
     if (!labels) {
       core.notice(

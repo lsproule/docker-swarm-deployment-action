@@ -44,9 +44,9 @@ export async function monitorDeployment(settings: Readonly<Settings>) {
       true,
     );
 
-    core.debug(
+    core.info(
       `Waiting for services to finish updating: ` +
-        `${completedServices.size}/${services.length}`,
+      `${completedServices.size}/${services.length}`,
     );
 
     for (const service of services) {
@@ -82,9 +82,9 @@ export async function monitorDeployment(settings: Readonly<Settings>) {
             { data: "message", header: true },
             ...(logs[0]
               ? Object.keys(logs[0].metadata).map((key) => ({
-                  data: key,
-                  header: true,
-                }))
+                data: key,
+                header: true,
+              }))
               : []),
           ],
           ...logs.map((entry) => [
@@ -133,7 +133,7 @@ export function isServiceUpdateComplete(
   >,
 ) {
   const name = service.Spec?.Name ?? service.Name;
-  core.debug(`Checking update status of service ${name}`);
+  core.info(`Checking update status of service ${name}`);
 
   if (!service.UpdateStatus && isServiceRunning(service)) {
     return true;
@@ -142,7 +142,7 @@ export function isServiceUpdateComplete(
   const updateStatus = service.UpdateStatus?.State ?? "unknown";
 
   if (updateStatus === "completed") {
-    core.debug(`Update of service "${name}" is complete`);
+    core.info(`Update of service "${name}" is complete`);
 
     return true;
   }
@@ -175,26 +175,26 @@ export function isServiceRunning(
   service: Pick<ServiceWithMetadata, "Spec" | "Replicas" | "ID">,
 ) {
   const name = service.Spec?.Name ?? service.ID;
-  core.debug(`Checking if service "${name}" is currently running`);
+  core.info(`Checking if service "${name}" is currently running`);
 
   if (service.Replicas) {
     const [running = 0, desired = 0] = service.Replicas.split("/", 2);
 
     if (running === desired) {
-      core.debug(`Service "${name}" is running`);
+      core.info(`Service "${name}" is running`);
 
       return true;
     }
 
-    core.debug(
+    core.info(
       `Service "${name}" is only partially running: ` +
-        `${running}/${desired} tasks running`,
+      `${running}/${desired} tasks running`,
     );
 
     return false;
   }
 
-  core.debug(`Service "${name}" is not running`);
+  core.info(`Service "${name}" is not running`);
 
   return false;
 }
@@ -218,9 +218,9 @@ export function isServiceRunning(
 function resolveFailureReason(
   state:
     | Exclude<
-        Exclude<Service["UpdateStatus"], undefined>["State"],
-        "completed" | "updating"
-      >
+      Exclude<Service["UpdateStatus"], undefined>["State"],
+      "completed" | "updating"
+    >
     | "unknown",
 ) {
   return (
